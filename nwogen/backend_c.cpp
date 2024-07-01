@@ -36,7 +36,7 @@ void Backend_C::addExpression(OperationType op, const std::vector<std::string>& 
 
 std::string Backend_C::generateCode() const
 {
-
+  return "";
 }
 
 }

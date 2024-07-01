@@ -41,7 +41,7 @@ class BlockOutport : public Block {
 
 public:
 
-  Outport(int64_t SID, const std::string& name);
+  BlockOutport(int64_t SID, const std::string& name);
 
   void write(const Backend& backend) const override;
 
@@ -61,6 +61,8 @@ public:
 };
 
 class BlockGain : public Block {
+
+  std::shared_ptr<Block> block;
 
 public:
 

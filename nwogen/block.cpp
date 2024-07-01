@@ -50,7 +50,7 @@ void BlockGain::write(const Backend& backend) const
 }
 
 BlockUnitDelay::BlockUnitDelay(int64_t SID, const std::string& name, const std::shared_ptr<Block>& parent)
-  : BlockUnitDelay(SID, name), parent(parent)
+  : Block(SID, name), parent(parent)
 {}
 
 void BlockUnitDelay::write(const Backend& backend) const {
