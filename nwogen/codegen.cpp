@@ -17,13 +17,15 @@ CodeGenerator::CodeGenerator(rapidxml::xml_document<>& document)
   }
 
   std::unordered_map<int, rapidxml::xml_node<>*> sid_to_node;
-  std::unordered_map<int, std::vector<int>> connections;
+  std::unordered_map<int, std::vector<int>> edges;
+
+
 
   for (rapidxml::xml_node<>* node = systemNode->first_node(); node; node = node->next_sibling()) {
 
     if (strcmp(node->name(), "Block") == 0) {
-      auto block_type = node->first_attribute("BlockType");
-      if (block_type == nullptr) {
+      auto blockType = node->first_attribute("BlockType");
+      if (blockType == nullptr) {
 	throw ParseError("Expected block node to have attribute \"BlockType\"");
       }
       auto name = node->first_attribute("Name");
@@ -34,17 +36,61 @@ CodeGenerator::CodeGenerator(rapidxml::xml_document<>& document)
       if (sid == nullptr) {
 	throw ParseError("Expected block node to have attribute \"sid\"");
       }
-      std::cout << "Node: " << name->value() << " " << block_type->value() << " " << sid->value() << "\n";
+      int sidValue = atoi(sid->value());
 
-      parseObject(node);
+      if (sid_to_node.find(sidValue) != sid_to_node.end()) {
+	throw ParseError("Found two blocks with the same SID");
+      }
+
+      sid_to_node[sidValue] = node;
 
     } else if (strcmp(node->name(), "Line") == 0) {
-      std::cout << "Line:\n";
-      parseObject(node);
+
+      int src = -1, dst = -1;
+      for (auto child = node->first_node("P"); child; child = child->next_sibling("P")) {
+
+	auto name = child->first_attribute("Name");
+	if (name) {
+	  if (strcmp(name->value(), "Src") == 0) {
+	    std::cout << "\t" << child->value() << " " << atoi(child->value()) << "\n";
+	    src = atoi(child->value());
+	  } else if (strcmp(name->value(), "Dst") == 0) {
+	    std::cout << "\t" << child->value() << " " << atoi(child->value()) << "\n";
+	    dst = atoi(child->value());
+	  }
+	}
+
+      }
+      if (dst != -1) {
+	edges[dst].push_back(src);
+      }
+
+      for (auto branch = node->first_node("Branch"); branch; branch = branch->next_sibling("Branch")) {
+
+	for (auto child = branch->first_node("P"); child; child = child->next_sibling("P")) {
+	  auto name = child->first_attribute("Name");
+	  if (name) {
+	    if (strcmp(name->value(), "Dst") == 0) {
+	      dst = atoi(child->value());
+	    }
+	  }
+	}
+	edges[dst].push_back(src);
+
+      }
+
     } else {
       throw ParseError("Expected node to be called \"Block\" or \"Line\"");
     }
 
+  }
+
+  for (auto& it: edges) {
+    std::cout << "Dst: " << it.first << " { ";
+    for (int a: it.second) {
+      std::cout << a << ", ";
+    }
+    std::cout << "}\n";
   }
 
 }
