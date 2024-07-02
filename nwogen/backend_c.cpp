@@ -34,9 +34,10 @@ void Backend_C::addExpression(OperationType op, const std::vector<std::string>& 
 
 }
 
-std::string Backend_C::generateCode() const
+void Backend_C::generateCode(std::ostream& out) const
 {
-  return "";
+  out << "#include \"nwocg_run.h\"\n";
+  out << "#include <math.h>\n";
 }
 
 }

@@ -29,7 +29,7 @@ public:
   virtual void endAssignment(const std::string& var) = 0;
   virtual void addExpression(OperationType op, const std::vector<std::string>& variables) = 0;
 
-  virtual std::string generateCode() const = 0;
+  virtual void generateCode(std::ostream& out) const = 0;
 };
 
 }

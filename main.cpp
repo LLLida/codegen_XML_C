@@ -1,4 +1,5 @@
-#include "rapidxml/rapidxml.hpp"
+#include "nwogen/codegen.hpp"
+#include "nwogen/backend_c.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -18,26 +19,10 @@ int main(int argc, char** argv)
   rapidxml::xml_document<> document;
   document.parse<0>((char*)buffer.str().c_str());
 
-  // std::cout << "Name of my first node is: " << document.first_node()->name() << "\n";
-  // rapidxml::xml_node<> *node = document.first_node("System");
-  // std::cout << "Node foobar has value " << node->value() << "\n";
-  // for (rapidxml::xml_attribute<> *attr = node->first_attribute(); attr; attr = attr->next_attribute()) {
-  //   std::cout << "Node foobar has attribute " << attr->name() << " ";
-  //   std::cout << "with value " << attr->value() << "\n";
-  // }
+  nwogen::CodeGenerator codegen(document);
+  auto backend = std::make_shared<nwogen::Backend_C>();
 
-  rapidxml::xml_node<>* rootNode = document.first_node()->first_node();
-
-  for (rapidxml::xml_node<>* node = rootNode; node; node = node->next_sibling()) {
-    std::cout << "Node Name: " << node->name() << std::endl;
-
-    if (node->value())
-      std::cout << "Node Value: " << node->value() << std::endl;
-
-    for (rapidxml::xml_attribute<>* attr = node->first_attribute(); attr; attr = attr->next_attribute()) {
-      std::cout << "  Attribute Name: " << attr->name() << ", Attribute Value: " << attr->value() << std::endl;
-    }
-  }
+  codegen.generateCode(*backend, std::cout);
 
   return 0;
 }

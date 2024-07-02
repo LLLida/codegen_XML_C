@@ -6,7 +6,9 @@ add_library(nwogen STATIC
   "backend_c.cpp"
   "backend_c.hpp"
   "block.cpp"
-  "block.hpp")
+  "block.hpp"
+  "codegen.hpp"
+  "codegen.cpp")
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 

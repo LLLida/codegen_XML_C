@@ -22,7 +22,7 @@ public:
   void endAssignment(const std::string& var) override;
   void addExpression(OperationType op, const std::vector<std::string>& variables) override;
 
-  std::string generateCode() const override;
+  void generateCode(std::ostream& out) const override;
 
 };
 
