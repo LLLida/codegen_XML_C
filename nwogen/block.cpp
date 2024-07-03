@@ -1,6 +1,12 @@
 #include "block.hpp"
 
+#include <algorithm>
 #include <iostream>
+
+std::string removeSpaces(std::string str) {
+  str.erase(remove(str.begin(), str.end(), ' '), str.end());
+  return str;
+}
 
 namespace nwogen {
 
@@ -10,7 +16,7 @@ void mark(int64_t SID, const LookupTable& table) {
 }
 
 Block::Block(int64_t SID, const std::string& name)
-  : SID(SID), name(name)
+  : SID(SID), name(removeSpaces(name))
 {}
 
 int64_t Block::getSID() const {
@@ -51,8 +57,8 @@ int64_t BlockOutport::getInputSID() const {
   return inputSID;
 }
 
-BlockSum::BlockSum(int64_t SID, const std::string& name, int64_t leftSID, int64_t rightSID)
-  : Block(SID, name), leftSID(leftSID), rightSID(rightSID)
+BlockSum::BlockSum(int64_t SID, const std::string& name, int64_t leftSID, int64_t rightSID, bool isLeftMinus, bool isRightMinus)
+  : Block(SID, name), leftSID(leftSID), rightSID(rightSID), isLeftMinus(isLeftMinus), isRightMinus(isRightMinus)
 {
 
 }
@@ -70,6 +76,7 @@ void BlockSum::write(Backend& backend, const LookupTable& table) const {
   }
 
   backend.declareVariable(getName());
+  backend.addStep(getName(), left->getName()+" + "+right->getName());
 }
 
 int64_t BlockSum::getLeftSID() const {
@@ -93,6 +100,7 @@ void BlockGain::write(Backend& backend, const LookupTable& table) const {
   }
 
   backend.declareVariable(getName());
+  backend.addStep(getName(), input->getName()+" * "+std::to_string(factor));
 }
 
 int64_t BlockGain::getInputSID() const
@@ -112,7 +120,9 @@ void BlockUnitDelay::write(Backend& backend, const LookupTable& table) const {
     input->write(backend, table);
   }
 
-  // backend.declareVariable(getName());
+  backend.declareVariable(getName());
+  backend.initVariable(getName(), "0");
+  backend.addStep(getName(), input->getName(), true);
 }
 
 int64_t BlockUnitDelay::getInputSID() const {

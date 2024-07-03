@@ -8,34 +8,24 @@ namespace nwogen {
 Backend_C::Backend_C()
 {}
 
-void Backend_C::declareVariable(const std::string& var)
-{
+void Backend_C::declareVariable(const std::string& var) {
   variables.push_back(var);
 }
 
-void Backend_C::initVariable(const std::string& var, double value)
-{
-
+void Backend_C::initVariable(const std::string& var, const std::string& expr) {
+  inits.push_back({var, expr});
 }
 
-void Backend_C::addPort(const std::string& name, const std::string& var, bool isInput, int portNumber)
-{
+void Backend_C::addPort(const std::string& name, const std::string& var, bool isInput, int portNumber) {
   ports.push_back({name, var, isInput, portNumber});
 }
 
-void Backend_C::beginAssignment(const std::string& var)
-{
-
-}
-
-void Backend_C::endAssignment(const std::string& var)
-{
-
-}
-
-void Backend_C::addExpression(OperationType op, const std::vector<std::string>& variables)
-{
-
+void Backend_C::addStep(const std::string& name, const std::string& expr, bool post) {
+  if (post) {
+    steps2.push_back({name, expr});
+  } else {
+    steps1.push_back({name, expr});
+  }
 }
 
 void Backend_C::saveCode(std::ostream& out) const
@@ -51,13 +41,22 @@ void Backend_C::saveCode(std::ostream& out) const
 
   out << "void nwocg_generated_init()\n";
   out << "{\n";
-  out << inits.str();
+  for (auto& init: inits) {
+    out << "\tnwocg." << init.first << " = " << init.second << ";\n";
+  }
   out << "}\n";
 
   out << "void nwocg_generated_step()\n";
   out << "{\n";
-  out << steps.str() << "\n";
-  out << updates.str();
+  {
+    for (auto& step: steps1) {
+      out << "\tnwocg." << step.first << " = " << step.second << ";\n";
+    }
+    out << "\n";
+    for (auto& step: steps2) {
+      out << "\tnwocg." << step.first << " = " << step.second << ";\n";
+    }
+  }
   out << "}\n";
 
   out << "static const nwocg_ExtPort ext_ports[] =\n";

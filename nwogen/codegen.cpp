@@ -190,8 +190,20 @@ std::shared_ptr<Block> parseSum(rapidxml::xml_node<>* blockNode, const std::unor
   auto firstInput = srcVector[0];
   auto secondInput = srcVector[1];
 
+  bool isLeftMinus = false, isRightMinus = false;
+  for (auto p = blockNode->first_node("P"); p; p = p->next_sibling("P")) {
+    auto name = p->first_attribute("Name");
+    if (!name) {
+      throw ParseError("<P> has no Name");
+    }
+    if (strcmp(name->value(), "Inputs") == 0) {
+      isLeftMinus = p->value()[0] == '-';
+      isRightMinus = p->value()[1] == '-';
+    }
+  }
+
   // std::cout << "Sum: (" << atoll(sid->value()) << ") " << name->value() << " left=" << firstInput << " right=" << secondInput << "\n";
-  return std::make_shared<BlockSum>(sidValue, name->value(), firstInput, secondInput);
+  return std::make_shared<BlockSum>(sidValue, name->value(), firstInput, secondInput, isLeftMinus, isRightMinus);
 }
 
 std::shared_ptr<Block> parseGain(rapidxml::xml_node<>* blockNode, const std::unordered_map<int, std::vector<int>>& edges)

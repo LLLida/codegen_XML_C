@@ -61,10 +61,12 @@ class BlockSum : public Block {
 
   int64_t leftSID;
   int64_t rightSID;
+  bool isLeftMinus;
+  bool isRightMinus;
 
 public:
 
-  BlockSum(int64_t SID, const std::string& name, int64_t leftSID, int64_t rightSID);
+  BlockSum(int64_t SID, const std::string& name, int64_t leftSID, int64_t rightSID, bool isLeftMinus, bool isRightMinus);
 
   void write(Backend& backend, const LookupTable& table) const override;
 
