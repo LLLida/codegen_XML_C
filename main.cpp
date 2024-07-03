@@ -21,9 +21,11 @@ int main(int argc, char** argv)
 
   try {
     nwogen::CodeGenerator codegen(document);
-    auto backend = std::make_shared<nwogen::Backend_C>(std::cout);
+    auto backend = std::make_shared<nwogen::Backend_C>();
 
     codegen.generateCode(*backend);
+
+    backend->saveCode(std::cout);
   } catch (nwogen::ParseError& err) {
     std::cout << "Caught parse error: " << err.what() << "\n";
   }

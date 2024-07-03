@@ -28,7 +28,8 @@ BlockInport::BlockInport(int64_t SID, const std::string& name, int portNumber)
 void BlockInport::write(Backend& backend, const LookupTable& table) const {
   mark(getSID(), table);
 
-  std::cout << "BlockInport::write\n";
+  backend.declareVariable(getName());
+  backend.addPort(getName(), getName(), true, portNumber);
 }
 
 BlockOutport::BlockOutport(int64_t SID, const std::string& name, int64_t inputSID)
@@ -42,7 +43,8 @@ void BlockOutport::write(Backend& backend, const LookupTable& table) const {
   if (!marked) {
     input->write(backend, table);
   }
-  std::cout << "BlockOutport::write\n";
+
+  backend.addPort(getName(), input->getName(), false, 999);
 }
 
 int64_t BlockOutport::getInputSID() const {
@@ -66,7 +68,8 @@ void BlockSum::write(Backend& backend, const LookupTable& table) const {
   if (!rightMarked) {
     right->write(backend, table);
   }
-  std::cout << "BlockSum::write\n";
+
+  backend.declareVariable(getName());
 }
 
 int64_t BlockSum::getLeftSID() const {
@@ -88,7 +91,8 @@ void BlockGain::write(Backend& backend, const LookupTable& table) const {
   if (!marked) {
     input->write(backend, table);
   }
-  std::cout << "BlockGain::write\n";
+
+  backend.declareVariable(getName());
 }
 
 int64_t BlockGain::getInputSID() const
@@ -107,7 +111,8 @@ void BlockUnitDelay::write(Backend& backend, const LookupTable& table) const {
   if (!marked) {
     input->write(backend, table);
   }
-  std::cout << "BlockUnitDelay::write\n";
+
+  // backend.declareVariable(getName());
 }
 
 int64_t BlockUnitDelay::getInputSID() const {
