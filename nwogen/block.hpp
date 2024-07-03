@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <string>
 
 #include "backend.hpp"
@@ -29,9 +28,11 @@ public:
 
 class BlockInport : public Block {
 
+  int portNumber;
+
 public:
 
-  BlockInport(int64_t SID, const std::string& name);
+  BlockInport(int64_t SID, const std::string& name, int portNumber);
 
   void write(const Backend& backend) const override;
 
@@ -49,39 +50,47 @@ public:
 
 class BlockSum : public Block {
 
-  std::shared_ptr<Block> left_argument;
-  std::shared_ptr<Block> right_argument;
+  int64_t leftSID;
+  int64_t rightSID;
 
 public:
 
-  BlockSum(int64_t SID, const std::string& name, const std::shared_ptr<Block>& left, const std::shared_ptr<Block>& right);
+  BlockSum(int64_t SID, const std::string& name, int64_t leftSID, int64_t rightSID);
 
   void write(const Backend& backend) const override;
+
+  int64_t getLeft() const;
+  int64_t getRight() const;
 
 };
 
 class BlockGain : public Block {
 
-  std::shared_ptr<Block> block;
+  double factor;
+  int64_t input;
 
 public:
 
-  BlockGain(int64_t SID, const std::string& name, const std::shared_ptr<Block>& block);
+  BlockGain(int64_t SID, const std::string& name, int64_t input, double factor);
 
   void write(const Backend& backend) const override;
+
+  int64_t getInput() const;
 
 };
 
 class BlockUnitDelay : public Block {
 
-  std::shared_ptr<Block> parent;
+  int64_t input;
+  double sampleTime;
 
 public:
 
-  BlockUnitDelay(int64_t SID, const std::string& name, const std::shared_ptr<Block>& parent);
+  BlockUnitDelay(int64_t SID, const std::string& name, int64_t input, double sampleTime);
 
   void write(const Backend& backend) const override;
 
+  int64_t getInput() const;
 };
 
 }

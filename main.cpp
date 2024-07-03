@@ -19,10 +19,14 @@ int main(int argc, char** argv)
   rapidxml::xml_document<> document;
   document.parse<0>((char*)buffer.str().c_str());
 
-  nwogen::CodeGenerator codegen(document);
-  auto backend = std::make_shared<nwogen::Backend_C>();
+  try {
+    nwogen::CodeGenerator codegen(document);
+    auto backend = std::make_shared<nwogen::Backend_C>();
 
-  codegen.generateCode(*backend, std::cout);
+    codegen.generateCode(*backend, std::cout);
+  } catch (nwogen::ParseError& err) {
+    std::cout << "Caught parse error: " << err.what() << "\n";
+  }
 
   return 0;
 }

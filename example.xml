@@ -75,9 +75,6 @@
     <Branch>
       <P Name="Dst">19#in:1</P>
     </Branch>
-    <Branch>
-      <P Name="Dst">19#in:1</P>
-    </Branch>
   </Line>
   <Line>
     <P Name="Src">21#out:1</P>
