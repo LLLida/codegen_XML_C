@@ -1,6 +1,13 @@
 #include "block.hpp"
 
+#include <iostream>
+
 namespace nwogen {
+
+void mark(int64_t SID, const LookupTable& table) {
+  auto& [unused, marked] = table.at(SID);
+  const_cast<bool&>(marked) = true;
+}
 
 Block::Block(int64_t SID, const std::string& name)
   : SID(SID), name(name)
@@ -18,15 +25,24 @@ BlockInport::BlockInport(int64_t SID, const std::string& name, int portNumber)
   : Block(SID, name), portNumber(portNumber)
 {}
 
-void BlockInport::write(const Backend& backend) const {
+void BlockInport::write(Backend& backend, const LookupTable& table) const {
+  mark(getSID(), table);
 
+  std::cout << "BlockInport::write\n";
 }
 
 BlockOutport::BlockOutport(int64_t SID, const std::string& name, int64_t inputSID)
   : Block(SID, name), inputSID(inputSID)
 {}
 
-void BlockOutport::write(const Backend& backend) const {
+void BlockOutport::write(Backend& backend, const LookupTable& table) const {
+  mark(getSID(), table);
+
+  auto& [input, marked] = table.at(inputSID);
+  if (!marked) {
+    input->write(backend, table);
+  }
+  std::cout << "BlockOutport::write\n";
 }
 
 int64_t BlockOutport::getInputSID() const {
@@ -39,7 +55,18 @@ BlockSum::BlockSum(int64_t SID, const std::string& name, int64_t leftSID, int64_
 
 }
 
-void BlockSum::write(const Backend& backend) const {
+void BlockSum::write(Backend& backend, const LookupTable& table) const {
+  mark(getSID(), table);
+
+  auto& [left, leftMarked] = table.at(leftSID);
+  if (!leftMarked) {
+    left->write(backend, table);
+  }
+  auto& [right, rightMarked] = table.at(rightSID);
+  if (!rightMarked) {
+    right->write(backend, table);
+  }
+  std::cout << "BlockSum::write\n";
 }
 
 int64_t BlockSum::getLeftSID() const {
@@ -54,9 +81,14 @@ BlockGain::BlockGain(int64_t SID, const std::string& name, int64_t inputSID, dou
   : Block(SID, name), inputSID(inputSID), factor(factor)
 {}
 
-void BlockGain::write(const Backend& backend) const
-{
+void BlockGain::write(Backend& backend, const LookupTable& table) const {
+  mark(getSID(), table);
 
+  auto& [input, marked] = table.at(inputSID);
+  if (!marked) {
+    input->write(backend, table);
+  }
+  std::cout << "BlockGain::write\n";
 }
 
 int64_t BlockGain::getInputSID() const
@@ -68,8 +100,14 @@ BlockUnitDelay::BlockUnitDelay(int64_t SID, const std::string& name, int64_t inp
   : Block(SID, name), inputSID(inputSID), sampleTime(sampleTime)
 {}
 
-void BlockUnitDelay::write(const Backend& backend) const {
+void BlockUnitDelay::write(Backend& backend, const LookupTable& table) const {
+  mark(getSID(), table);
 
+  auto& [input, marked] = table.at(inputSID);
+  if (!marked) {
+    input->write(backend, table);
+  }
+  std::cout << "BlockUnitDelay::write\n";
 }
 
 int64_t BlockUnitDelay::getInputSID() const {

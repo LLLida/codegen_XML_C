@@ -2,6 +2,7 @@
 
 #include "backend.hpp"
 
+#include <ostream>
 #include <sstream>
 
 namespace nwogen {
@@ -12,8 +13,11 @@ class Backend_C : public Backend
   std::stringstream inits;
   std::stringstream ports;
   std::stringstream assignments;
+  std::ostream& out;
 
 public:
+
+  Backend_C(std::ostream& out);
 
   void declareVariable(const std::string& var) override;
   void initVariable(const std::string& var, double value) override;

@@ -1,8 +1,6 @@
 #pragma once
 
-#include <memory>
 #include <stdexcept>
-#include <unordered_map>
 
 #include <rapidxml/rapidxml.hpp>
 
@@ -13,14 +11,14 @@ namespace nwogen {
 
 class CodeGenerator {
 
-  std::unordered_map<int, std::shared_ptr<Block>> blocks;
+  LookupTable blocks;
   std::shared_ptr<Block> outport;
 
 public:
 
   CodeGenerator(rapidxml::xml_document<>& document);
 
-  void generateCode(const Backend& backend, std::ostream& out);
+  void generateCode(Backend& backend);
 
 };
 

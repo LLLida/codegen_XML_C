@@ -4,6 +4,10 @@
 
 namespace nwogen {
 
+Backend_C::Backend_C(std::ostream& out)
+  : out(out)
+{}
+
 void Backend_C::declareVariable(const std::string& var)
 {
 

@@ -57,12 +57,13 @@ CodeGenerator::CodeGenerator(rapidxml::xml_document<>& document)
       throw ParseError("Undefined block type: "s + blockType->value());
     }
 
-    blocks[sidValue] = parseFunctions[blockType->value()](node, edges);
+    auto block = parseFunctions[blockType->value()](node, edges);
+    blocks[sidValue] = {block, false};
     if (strcmp(blockType->value(), "Outport") == 0) {
       if (outport) {
 	throw ParseError("there should only 1 block with type Outport");
       }
-      outport = blocks[sidValue];
+      outport = block;
     }
   }
 
@@ -71,10 +72,10 @@ CodeGenerator::CodeGenerator(rapidxml::xml_document<>& document)
   }
 }
 
-void CodeGenerator::generateCode(const Backend& backend, std::ostream& out) {
+void CodeGenerator::generateCode(Backend& backend) {
   // NOTE: generateCode assumes that blocks are already sorted in topological order
   auto block = dynamic_cast<BlockOutport*>(&*outport);
-  std::cout << "outport input: " << block->getInputSID();
+  block->write(backend, blocks);
 }
 
 std::unordered_map<int, std::vector<int>> parseEdges(rapidxml::xml_node<>* rootNode)

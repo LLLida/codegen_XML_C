@@ -1,10 +1,15 @@
 #pragma once
 
+#include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "backend.hpp"
 
 namespace nwogen {
+
+class Block;
+using LookupTable = std::unordered_map<int, std::pair<std::shared_ptr<Block>, bool>>;
 
 class Block {
 
@@ -22,7 +27,7 @@ public:
 
   virtual ~Block() = default;
 
-  virtual void write(const Backend& backend) const = 0;
+  virtual void write(Backend& backend, const LookupTable& table) const = 0;
 
 };
 
@@ -34,7 +39,7 @@ public:
 
   BlockInport(int64_t SID, const std::string& name, int portNumber);
 
-  void write(const Backend& backend) const override;
+  void write(Backend& backend, const LookupTable& table) const override;
 
 };
 
@@ -46,7 +51,7 @@ public:
 
   BlockOutport(int64_t SID, const std::string& name, int64_t inputSID);
 
-  void write(const Backend& backend) const override;
+  void write(Backend& backend, const LookupTable& table) const override;
 
   int64_t getInputSID() const;
 
@@ -61,7 +66,7 @@ public:
 
   BlockSum(int64_t SID, const std::string& name, int64_t leftSID, int64_t rightSID);
 
-  void write(const Backend& backend) const override;
+  void write(Backend& backend, const LookupTable& table) const override;
 
   int64_t getLeftSID() const;
   int64_t getRightSID() const;
@@ -77,7 +82,7 @@ public:
 
   BlockGain(int64_t SID, const std::string& name, int64_t inputSID, double factor);
 
-  void write(const Backend& backend) const override;
+  void write(Backend& backend, const LookupTable& table) const override;
 
   int64_t getInputSID() const;
 
@@ -92,7 +97,7 @@ public:
 
   BlockUnitDelay(int64_t SID, const std::string& name, int64_t inputSID, double sampleTime);
 
-  void write(const Backend& backend) const override;
+  void write(Backend& backend, const LookupTable& table) const override;
 
   int64_t getInputSID() const;
 };
