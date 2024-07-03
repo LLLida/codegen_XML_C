@@ -33,16 +33,7 @@ CodeGenerator::CodeGenerator(rapidxml::xml_document<>& document)
   parseFunctions["UnitDelay"] = parseUnitDelay;
 
   std::unordered_map<int, std::vector<int>> edges = parseEdges(systemNode);
-  std::vector<int> sid_order;
   std::unordered_map<int, std::shared_ptr<Block>> blocks;
-
-  for (auto& it: edges) {
-    std::cout << "Dst: " << it.first << " { ";
-    for (int a: it.second) {
-      std::cout << a << ", ";
-    }
-    std::cout << "}\n";
-  }
 
   for (rapidxml::xml_node<>* node = systemNode->first_node("Block"); node; node = node->next_sibling("Block")) {
     auto blockType = node->first_attribute("BlockType");
@@ -67,7 +58,7 @@ CodeGenerator::CodeGenerator(rapidxml::xml_document<>& document)
       throw ParseError("Undefined block type: "s + blockType->value());
     }
 
-    parseFunctions[blockType->value()](node, edges);
+    blocks[sidValue] = parseFunctions[blockType->value()](node, edges);
 
   }
 
@@ -127,14 +118,7 @@ std::unordered_map<int, std::vector<int>> parseEdges(rapidxml::xml_node<>* rootN
 std::shared_ptr<Block> parseInport(rapidxml::xml_node<>* blockNode, const std::unordered_map<int, std::vector<int>>& edges)
 {
   auto name = blockNode->first_attribute("Name");
-  if (!name) {
-    throw ParseError("block Inport should have Name");
-  }
-  auto sid = blockNode->first_attribute("SID");
-  if (!sid) {
-    throw ParseError("block Inport should have SID");
-  }
-  int64_t sidValue = atoll(sid->value());
+  int64_t sidValue = atoll(blockNode->first_attribute("SID")->value());
 
   // ignoring port field...
   // auto port = blockNode->first_node("Port");
@@ -152,37 +136,23 @@ std::shared_ptr<Block> parseInport(rapidxml::xml_node<>* blockNode, const std::u
     }
   }
 
-  std::cout << "Inport: (" << sidValue << ") " << name->value() << " portNumber=" << portNumber << "\n";
+  // std::cout << "Inport: (" << sidValue << ") " << name->value() << " portNumber=" << portNumber << "\n";
   return std::make_shared<BlockInport>(sidValue, name->value(), portNumber);
 }
 
 std::shared_ptr<Block> parseOutport(rapidxml::xml_node<>* blockNode, const std::unordered_map<int, std::vector<int>>& edges)
 {
   auto name = blockNode->first_attribute("Name");
-  if (!name) {
-    throw ParseError("block Outport should have Name");
-  }
-  auto sid = blockNode->first_attribute("SID");
-  if (!sid) {
-    throw ParseError("block Outport should have SID");
-  }
-  int64_t sidValue = atoll(sid->value());
+  int64_t sidValue = atoll(blockNode->first_attribute("SID")->value());
 
-  std::cout << "Outport: (" << atoll(sid->value()) << ") " << name->value() << "\n";
-  return std::make_shared<BlockOutport>(atoll(sid->value()), name->value());
+  // std::cout << "Outport: (" << atoll(sid->value()) << ") " << name->value() << "\n";
+  return std::make_shared<BlockOutport>(sidValue, name->value());
 }
 
 std::shared_ptr<Block> parseSum(rapidxml::xml_node<>* blockNode, const std::unordered_map<int, std::vector<int>>& edges)
 {
   auto name = blockNode->first_attribute("Name");
-  if (!name) {
-    throw ParseError("block Sum should have Name");
-  }
-  auto sid = blockNode->first_attribute("SID");
-  if (!sid) {
-    throw ParseError("block Sum should have SID");
-  }
-  int64_t sidValue = atoll(sid->value());
+  int64_t sidValue = atoll(blockNode->first_attribute("SID")->value());
 
   auto it = edges.find(sidValue);
   if (it == edges.end()) {
@@ -195,21 +165,14 @@ std::shared_ptr<Block> parseSum(rapidxml::xml_node<>* blockNode, const std::unor
   auto firstInput = srcVector[0];
   auto secondInput = srcVector[1];
 
-  std::cout << "Sum: (" << atoll(sid->value()) << ") " << name->value() << " left=" << firstInput << " right=" << secondInput << "\n";
+  // std::cout << "Sum: (" << atoll(sid->value()) << ") " << name->value() << " left=" << firstInput << " right=" << secondInput << "\n";
   return std::make_shared<BlockSum>(sidValue, name->value(), firstInput, secondInput);
 }
 
 std::shared_ptr<Block> parseGain(rapidxml::xml_node<>* blockNode, const std::unordered_map<int, std::vector<int>>& edges)
 {
   auto name = blockNode->first_attribute("Name");
-  if (!name) {
-    throw ParseError("block Gain should have Name");
-  }
-  auto sid = blockNode->first_attribute("SID");
-  if (!sid) {
-    throw ParseError("block Gain should have SID");
-  }
-  int64_t sidValue = atoll(sid->value());
+  int64_t sidValue = atoll(blockNode->first_attribute("SID")->value());
 
   auto it = edges.find(sidValue);
   if (it == edges.end()) {
@@ -235,21 +198,14 @@ std::shared_ptr<Block> parseGain(rapidxml::xml_node<>* blockNode, const std::uno
     throw ParseError("block Gain has no Gain parameter specified");
   }
 
-  std::cout << "Gain: (" << atoll(sid->value()) << ") " << name->value() << " gain=" << gain << " input=" << input << "\n";
+  // std::cout << "Gain: (" << atoll(sid->value()) << ") " << name->value() << " gain=" << gain << " input=" << input << "\n";
   return std::make_shared<BlockGain>(sidValue, name->value(), input, gain);
 }
 
 std::shared_ptr<Block> parseUnitDelay(rapidxml::xml_node<>* blockNode, const std::unordered_map<int, std::vector<int>>& edges)
 {
   auto name = blockNode->first_attribute("Name");
-  if (!name) {
-    throw ParseError("block UnitDelay should have Name");
-  }
-  auto sid = blockNode->first_attribute("SID");
-  if (!sid) {
-    throw ParseError("block UnitDelay should have SID");
-  }
-  int64_t sidValue = atoll(sid->value());
+  int64_t sidValue = atoll(blockNode->first_attribute("SID")->value());
 
   auto it = edges.find(sidValue);
   if (it == edges.end()) {
@@ -275,7 +231,7 @@ std::shared_ptr<Block> parseUnitDelay(rapidxml::xml_node<>* blockNode, const std
     throw ParseError("block UnitDelay has no SampleTime parameter specified");
   }
 
-  std::cout << "UnitDelay: (" << atoll(sid->value()) << ") " << name->value() << " sampleTime=" << sampleTime << " input=" << input << "\n";
+  // std::cout << "UnitDelay: (" << atoll(sid->value()) << ") " << name->value() << " sampleTime=" << sampleTime << " input=" << input << "\n";
   return std::make_shared<BlockUnitDelay>(sidValue, name->value(), input, sampleTime);
 }
 
