@@ -3,7 +3,6 @@
 #include <cstring>
 #include <iostream>		// for operator <<(ostream, char*)
 #include <string>
-#include <unordered_map>
 
 using namespace std::literals;
 
@@ -18,6 +17,7 @@ static std::shared_ptr<Block> parseGain(rapidxml::xml_node<>* blockNode, const s
 static std::shared_ptr<Block> parseUnitDelay(rapidxml::xml_node<>* blockNode, const std::unordered_map<int, std::vector<int>>& edges);
 
 CodeGenerator::CodeGenerator(rapidxml::xml_document<>& document)
+  : blocks(), outport(nullptr)
 {
   rapidxml::xml_node<>* systemNode = document.first_node();
   if (strcmp(systemNode->name(), "System") != 0) {
@@ -33,7 +33,6 @@ CodeGenerator::CodeGenerator(rapidxml::xml_document<>& document)
   parseFunctions["UnitDelay"] = parseUnitDelay;
 
   std::unordered_map<int, std::vector<int>> edges = parseEdges(systemNode);
-  std::unordered_map<int, std::shared_ptr<Block>> blocks;
 
   for (rapidxml::xml_node<>* node = systemNode->first_node("Block"); node; node = node->next_sibling("Block")) {
     auto blockType = node->first_attribute("BlockType");
@@ -59,13 +58,23 @@ CodeGenerator::CodeGenerator(rapidxml::xml_document<>& document)
     }
 
     blocks[sidValue] = parseFunctions[blockType->value()](node, edges);
-
+    if (strcmp(blockType->value(), "Outport") == 0) {
+      if (outport) {
+	throw ParseError("there should only 1 block with type Outport");
+      }
+      outport = blocks[sidValue];
+    }
   }
 
+  if (!outport) {
+    throw ParseError("there must be 1 block with type Outport");
+  }
 }
 
 void CodeGenerator::generateCode(const Backend& backend, std::ostream& out) {
   // NOTE: generateCode assumes that blocks are already sorted in topological order
+  auto block = dynamic_cast<BlockOutport*>(&*outport);
+  std::cout << "outport input: " << block->getInputSID();
 }
 
 std::unordered_map<int, std::vector<int>> parseEdges(rapidxml::xml_node<>* rootNode)
@@ -120,6 +129,11 @@ std::shared_ptr<Block> parseInport(rapidxml::xml_node<>* blockNode, const std::u
   auto name = blockNode->first_attribute("Name");
   int64_t sidValue = atoll(blockNode->first_attribute("SID")->value());
 
+  auto it = edges.find(sidValue);
+  if (it != edges.end()) {
+    throw ParseError("there should not be any lines pointing to Inport");
+  }
+
   // ignoring port field...
   // auto port = blockNode->first_node("Port");
   // if (!port) {
@@ -145,8 +159,18 @@ std::shared_ptr<Block> parseOutport(rapidxml::xml_node<>* blockNode, const std::
   auto name = blockNode->first_attribute("Name");
   int64_t sidValue = atoll(blockNode->first_attribute("SID")->value());
 
-  // std::cout << "Outport: (" << atoll(sid->value()) << ") " << name->value() << "\n";
-  return std::make_shared<BlockOutport>(sidValue, name->value());
+  auto it = edges.find(sidValue);
+  if (it == edges.end()) {
+    throw ParseError("SID "+std::to_string(sidValue)+" has not been defined");
+  }
+  auto& srcVector = it->second;
+  if (srcVector.size() != 1) {
+    throw ParseError("expected Gain to have 1 input");
+  }
+  auto input = srcVector[0];
+
+  // std::cout << "Outport: (" << atoll(sid->value()) << ") " << name->value() << " input=" << input << "\n";
+  return std::make_shared<BlockOutport>(sidValue, name->value(), input);
 }
 
 std::shared_ptr<Block> parseSum(rapidxml::xml_node<>* blockNode, const std::unordered_map<int, std::vector<int>>& edges)

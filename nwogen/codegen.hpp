@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <unordered_map>
 
 #include <rapidxml/rapidxml.hpp>
 
@@ -12,7 +13,8 @@ namespace nwogen {
 
 class CodeGenerator {
 
-  std::vector<std::shared_ptr<Block>> blocks;
+  std::unordered_map<int, std::shared_ptr<Block>> blocks;
+  std::shared_ptr<Block> outport;
 
 public:
 

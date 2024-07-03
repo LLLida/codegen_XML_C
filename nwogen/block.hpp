@@ -40,11 +40,15 @@ public:
 
 class BlockOutport : public Block {
 
+  int64_t inputSID;
+
 public:
 
-  BlockOutport(int64_t SID, const std::string& name);
+  BlockOutport(int64_t SID, const std::string& name, int64_t inputSID);
 
   void write(const Backend& backend) const override;
+
+  int64_t getInputSID() const;
 
 };
 
@@ -59,38 +63,38 @@ public:
 
   void write(const Backend& backend) const override;
 
-  int64_t getLeft() const;
-  int64_t getRight() const;
+  int64_t getLeftSID() const;
+  int64_t getRightSID() const;
 
 };
 
 class BlockGain : public Block {
 
   double factor;
-  int64_t input;
+  int64_t inputSID;
 
 public:
 
-  BlockGain(int64_t SID, const std::string& name, int64_t input, double factor);
+  BlockGain(int64_t SID, const std::string& name, int64_t inputSID, double factor);
 
   void write(const Backend& backend) const override;
 
-  int64_t getInput() const;
+  int64_t getInputSID() const;
 
 };
 
 class BlockUnitDelay : public Block {
 
-  int64_t input;
+  int64_t inputSID;
   double sampleTime;
 
 public:
 
-  BlockUnitDelay(int64_t SID, const std::string& name, int64_t input, double sampleTime);
+  BlockUnitDelay(int64_t SID, const std::string& name, int64_t inputSID, double sampleTime);
 
   void write(const Backend& backend) const override;
 
-  int64_t getInput() const;
+  int64_t getInputSID() const;
 };
 
 }
