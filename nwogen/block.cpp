@@ -34,7 +34,8 @@ BlockInport::BlockInport(int64_t SID, const std::string& name, int portNumber)
 void BlockInport::write(Backend& backend, const LookupTable& table) const {
   mark(getSID(), table);
 
-  backend.declareVariable(getName());
+  // give inports have priority, so they get declared first
+  backend.declareVariable(getName(), getSID()-100);
   backend.addPort(getName(), getName(), true, portNumber);
 }
 
@@ -75,8 +76,8 @@ void BlockSum::write(Backend& backend, const LookupTable& table) const {
     right->write(backend, table);
   }
 
-  backend.declareVariable(getName());
-  backend.addStep(getName(), left->getName()+" + "+right->getName());
+  backend.declareVariable(getName(), getSID());
+  backend.addStepAddition(getName(), left->getName(), right->getName(), isLeftMinus, isRightMinus);
 }
 
 int64_t BlockSum::getLeftSID() const {
@@ -99,8 +100,8 @@ void BlockGain::write(Backend& backend, const LookupTable& table) const {
     input->write(backend, table);
   }
 
-  backend.declareVariable(getName());
-  backend.addStep(getName(), input->getName()+" * "+std::to_string(factor));
+  backend.declareVariable(getName(), getSID());
+  backend.addStepMultiplication(getName(), input->getName(), std::to_string(factor));
 }
 
 int64_t BlockGain::getInputSID() const
@@ -120,9 +121,9 @@ void BlockUnitDelay::write(Backend& backend, const LookupTable& table) const {
     input->write(backend, table);
   }
 
-  backend.declareVariable(getName());
+  backend.declareVariable(getName(), getSID());
   backend.initVariable(getName(), "0");
-  backend.addStep(getName(), input->getName(), true);
+  backend.addStepIdentity(getName(), input->getName(), true);
 }
 
 int64_t BlockUnitDelay::getInputSID() const {

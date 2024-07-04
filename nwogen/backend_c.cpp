@@ -8,8 +8,8 @@ namespace nwogen {
 Backend_C::Backend_C()
 {}
 
-void Backend_C::declareVariable(const std::string& var) {
-  variables.push_back(var);
+void Backend_C::declareVariable(const std::string& var, int order) {
+  variables.push_back({var, order});
 }
 
 void Backend_C::initVariable(const std::string& var, const std::string& expr) {
@@ -28,14 +28,46 @@ void Backend_C::addStep(const std::string& name, const std::string& expr, bool p
   }
 }
 
+void Backend_C::addStepIdentity(const std::string& name, const std::string& argument, bool post) {
+  std::string expr = (isdigit(argument[0]) ? argument : "nwocg."+argument);
+  addStep(name, expr, post);
+}
+
+void Backend_C::addStepAddition(const std::string& name, const std::string& left, const std::string& right, bool isLeftNegative, bool isRightNegative, bool post) {
+  std::string leftExpr = (isdigit(left[0]) ? left : "nwocg."+left);
+  std::string rightExpr = (isdigit(right[0]) ? right : "nwocg."+right);
+  if (isLeftNegative) leftExpr = "-"+leftExpr;
+  if (isRightNegative) {
+    rightExpr = "- "+rightExpr;
+  } else {
+    rightExpr = "+ "+rightExpr;
+  }
+
+  addStep(name, leftExpr+" "+rightExpr, post);
+}
+
+void Backend_C::addStepMultiplication(const std::string& name, const std::string& left, const std::string& right, bool post) {
+  std::string leftExpr = (isdigit(left[0]) ? left : "nwocg."+left);
+  std::string rightExpr = (isdigit(right[0]) ? right : "nwocg."+right);
+  addStep(name, leftExpr+" * "+rightExpr, post);
+}
+
+
 void Backend_C::saveCode(std::ostream& out) const
 {
   out << "#include \"nwocg_run.h\"\n";
   out << "#include <math.h>\n";
 
   out << "static struct {\n";
-  for (auto& var: variables) {
-    out << "\tdouble " << var << ";\n";
+  {
+    auto tempVars = variables;
+    std::sort(tempVars.begin(), tempVars.end(), [](auto& left, auto& right) {
+      return std::get<1>(left) < std::get<1>(right);
+    });
+
+    for (auto& var: tempVars) {
+      out << "\tdouble " << var.first << ";\n";
+    }
   }
   out << "} nwocg;\n";
 
