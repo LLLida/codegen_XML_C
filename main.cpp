@@ -32,7 +32,7 @@ int main(int argc, char** argv)
     if (outpath) {
       std::ofstream fout(outpath);
       backend->saveCode(fout);
-      std::cout << "Saved C source file to \"" << filepath << "\"\n";
+      std::cout << "Saved C source file to \"" << outpath << "\"\n";
     } else {
       backend->saveCode(std::cout);
     }
