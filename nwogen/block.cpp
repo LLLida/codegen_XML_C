@@ -156,6 +156,7 @@ void BlockCustom::write(Backend& backend, const LookupTable& table) const {
 		 [&table](int sid) {
 		   return table.at(sid).first->getName();
 		 });
+  backend.declareVariable(getName(), getSID());
   backend.addStepDependency(filepath, depNames, getName());
 }
 

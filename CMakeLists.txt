@@ -5,6 +5,6 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 add_subdirectory(nwogen)
 
-add_executable(test_nwogen "main.cpp")
+add_executable(codegen "main.cpp")
 
-target_link_libraries(test_nwogen nwogen)
+target_link_libraries(codegen nwogen)
