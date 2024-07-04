@@ -104,4 +104,21 @@ public:
   int64_t getInputSID() const;
 };
 
+class Diagram;
+
+class BlockCustom : public Block {
+
+  std::shared_ptr<Diagram> diagram;
+  std::string filepath;
+  std::vector<int> dependencies;
+
+public:
+
+  BlockCustom(int64_t SID, const std::string& name, const std::shared_ptr<Diagram>& diagram, const std::string& filepath, const std::vector<int>& dependencies);
+
+  void write(Backend& backend, const LookupTable& table) const override;
+
+  const std::shared_ptr<Diagram>& getDiagram() const;
+};
+
 }

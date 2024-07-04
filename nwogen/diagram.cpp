@@ -1,7 +1,9 @@
-#include "codegen.hpp"
+#include "diagram.hpp"
 
 #include <cstring>
+#include <fstream>
 #include <iostream>		// for operator <<(ostream, char*)
+#include <sstream>
 #include <string>
 
 using namespace std::literals;
@@ -15,8 +17,9 @@ static std::shared_ptr<Block> parseOutport(rapidxml::xml_node<>* blockNode, cons
 static std::shared_ptr<Block> parseSum(rapidxml::xml_node<>* blockNode, const std::unordered_map<int, std::vector<int>>& edges);
 static std::shared_ptr<Block> parseGain(rapidxml::xml_node<>* blockNode, const std::unordered_map<int, std::vector<int>>& edges);
 static std::shared_ptr<Block> parseUnitDelay(rapidxml::xml_node<>* blockNode, const std::unordered_map<int, std::vector<int>>& edges);
+static std::shared_ptr<Block> parseCustom(rapidxml::xml_node<>* blockNode, const std::unordered_map<int, std::vector<int>>& edges);
 
-CodeGenerator::CodeGenerator(rapidxml::xml_document<>& document)
+Diagram::Diagram(rapidxml::xml_document<>& document)
   : blocks(), outport(nullptr)
 {
   rapidxml::xml_node<>* systemNode = document.first_node();
@@ -31,6 +34,7 @@ CodeGenerator::CodeGenerator(rapidxml::xml_document<>& document)
   parseFunctions["Sum"] = parseSum;
   parseFunctions["Gain"] = parseGain;
   parseFunctions["UnitDelay"] = parseUnitDelay;
+  parseFunctions["Custom"] = parseCustom;
 
   std::unordered_map<int, std::vector<int>> edges = parseEdges(systemNode);
 
@@ -63,7 +67,7 @@ CodeGenerator::CodeGenerator(rapidxml::xml_document<>& document)
       if (outport) {
 	throw ParseError("there should only 1 block with type Outport");
       }
-      outport = block;
+      outport = std::dynamic_pointer_cast<BlockOutport>(block);
     }
   }
 
@@ -72,10 +76,12 @@ CodeGenerator::CodeGenerator(rapidxml::xml_document<>& document)
   }
 }
 
-void CodeGenerator::generateCode(Backend& backend) {
-  // NOTE: generateCode assumes that blocks are already sorted in topological order
-  auto block = dynamic_cast<BlockOutport*>(&*outport);
-  block->write(backend, blocks);
+void Diagram::emit(Backend& backend) {
+  outport->write(backend, blocks);
+}
+
+const std::shared_ptr<BlockOutport> Diagram::getOutport() const {
+  return outport;
 }
 
 std::unordered_map<int, std::vector<int>> parseEdges(rapidxml::xml_node<>* rootNode)
@@ -170,7 +176,7 @@ std::shared_ptr<Block> parseOutport(rapidxml::xml_node<>* blockNode, const std::
   }
   auto input = srcVector[0];
 
-  // std::cout << "Outport: (" << atoll(sid->value()) << ") " << name->value() << " input=" << input << "\n";
+  // std::cout << "Outport: (" << sidValue << ") " << name->value() << " input=" << input << "\n";
   return std::make_shared<BlockOutport>(sidValue, name->value(), input);
 }
 
@@ -202,7 +208,7 @@ std::shared_ptr<Block> parseSum(rapidxml::xml_node<>* blockNode, const std::unor
     }
   }
 
-  // std::cout << "Sum: (" << atoll(sid->value()) << ") " << name->value() << " left=" << firstInput << " right=" << secondInput << "\n";
+  // std::cout << "Sum: (" << sidValue << ") " << name->value() << " left=" << firstInput << " right=" << secondInput << "\n";
   return std::make_shared<BlockSum>(sidValue, name->value(), firstInput, secondInput, isLeftMinus, isRightMinus);
 }
 
@@ -235,7 +241,7 @@ std::shared_ptr<Block> parseGain(rapidxml::xml_node<>* blockNode, const std::uno
     throw ParseError("block Gain has no Gain parameter specified");
   }
 
-  // std::cout << "Gain: (" << atoll(sid->value()) << ") " << name->value() << " gain=" << gain << " input=" << input << "\n";
+  // std::cout << "Gain: (" << sidValue << ") " << name->value() << " gain=" << gain << " input=" << input << "\n";
   return std::make_shared<BlockGain>(sidValue, name->value(), input, gain);
 }
 
@@ -268,8 +274,45 @@ std::shared_ptr<Block> parseUnitDelay(rapidxml::xml_node<>* blockNode, const std
     throw ParseError("block UnitDelay has no SampleTime parameter specified");
   }
 
-  // std::cout << "UnitDelay: (" << atoll(sid->value()) << ") " << name->value() << " sampleTime=" << sampleTime << " input=" << input << "\n";
+  // std::cout << "UnitDelay: (" << sidValue << ") " << name->value() << " sampleTime=" << sampleTime << " input=" << input << "\n";
   return std::make_shared<BlockUnitDelay>(sidValue, name->value(), input, sampleTime);
+}
+
+std::shared_ptr<Block> parseCustom(rapidxml::xml_node<>* blockNode, const std::unordered_map<int, std::vector<int>>& edges)
+{
+  std::string name = blockNode->first_attribute("Name")->value();
+  int64_t sidValue = atoll(blockNode->first_attribute("SID")->value());
+
+  auto it = edges.find(sidValue);
+  if (it == edges.end()) {
+    throw ParseError("SID "+std::to_string(sidValue)+" has not been defined");
+  }
+  auto& srcVector = it->second;
+
+  std::string filepath;
+  std::string outpath;
+  for (auto p = blockNode->first_node("P"); p; p = p->next_sibling("P")) {
+    auto name = p->first_attribute("Name");
+    if (!name) {
+      throw ParseError("<P> has no Name");
+    }
+    if (strcmp(name->value(), "Filepath") == 0) {
+      filepath = p->value();
+    } else if (strcmp(name->value(), "OutputFile") == 0) {
+      outpath = p->value();
+    }
+  }
+
+  std::ifstream t(filepath);
+  std::stringstream buffer;
+  buffer << t.rdbuf();
+  // std::cout << buffer.str() << "\n";
+  rapidxml::xml_document<> document;
+  document.parse<0>((char*)buffer.str().c_str());
+  auto diagram = std::make_shared<Diagram>(document);
+
+  // std::cout << "Custom: (" << sidValue << ") " << name << " outpath=" << outpath << " inputpath=" << filepath << "\n";
+  return std::make_shared<BlockCustom>(sidValue, name, diagram, outpath, srcVector);
 }
 
 }

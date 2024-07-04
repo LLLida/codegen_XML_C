@@ -1,6 +1,8 @@
 #include "block.hpp"
+#include "diagram.hpp"
 
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 
 std::string removeSpaces(std::string str) {
@@ -128,6 +130,37 @@ void BlockUnitDelay::write(Backend& backend, const LookupTable& table) const {
 
 int64_t BlockUnitDelay::getInputSID() const {
   return inputSID;
+}
+
+BlockCustom::BlockCustom(int64_t SID, const std::string& name, const std::shared_ptr<Diagram>& diagram, const std::string& filepath, const std::vector<int>& dependencies)
+  : Block(SID, name), diagram(diagram), filepath(filepath), dependencies(dependencies)
+{}
+
+void BlockCustom::write(Backend& backend, const LookupTable& table) const {
+  mark(getSID(), table);
+
+  for (int inputSID: dependencies) {
+    auto& [input, marked] = table.at(inputSID);
+    if (!marked) {
+      input->write(backend, table);
+    }
+  }
+
+  auto newBackend = backend.copy();
+  diagram->emit(*newBackend);
+  std::ofstream fout(filepath);
+  newBackend->saveCode(fout);
+
+  std::vector<std::string> depNames(dependencies.size());
+  std::transform(dependencies.begin(), dependencies.end(), depNames.begin(),
+		 [&table](int sid) {
+		   return table.at(sid).first->getName();
+		 });
+  backend.addStepDependency(filepath, depNames, getName());
+}
+
+const std::shared_ptr<Diagram>& BlockCustom::getDiagram() const {
+  return diagram;
 }
 
 } // namespace nwogen

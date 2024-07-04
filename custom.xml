@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<System>
+  <Block BlockType="Inport" Name="input" SID="1">
+    <P Name="Position">[-20, 403, 10, 417]</P>
+    <Port>
+      <P Name="PortNumber">1</P>
+      <P Name="Name">input</P>
+    </Port>
+  </Block>
+  <Block BlockType="Gain" Name="Gain1" SID="2">
+    <P Name="Position">[270, 500, 310, 530]</P>
+    <P Name="Gain">6.9</P>
+  </Block>
+  <Block BlockType="Outport" Name="output" SID="3">
+    <P Name="Position">[565, 423, 595, 437]</P>
+  </Block>
+  <Line>
+    <P Name="Src">1#out:1</P>
+    <P Name="Dst">2#in:1</P>
+  </Line>
+  <Line>
+    <P Name="Src">2#out:1</P>
+    <P Name="Dst">3#in:1</P>
+  </Line>
+</System>

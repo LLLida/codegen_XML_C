@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <string>
 
 namespace nwogen {
 
@@ -52,6 +53,18 @@ void Backend_C::addStepMultiplication(const std::string& name, const std::string
   addStep(name, leftExpr+" * "+rightExpr, post);
 }
 
+void Backend_C::addStepDependency(const std::string& dependencyName, const std::vector<std::string>& dependencyInputs,
+				  const std::string& dependencyOutput) {
+  std::stringstream ss;
+  ss << "callModule(\"" << dependencyName << "\"";
+  for (auto& input: dependencyInputs) {
+    std::string expr = (isdigit(input[0]) ? input : "nwocg."+input);
+    ss << ", " << expr;
+  }
+  ss << ")";
+
+  addStep(dependencyOutput, ss.str(), false);
+}
 
 void Backend_C::saveCode(std::ostream& out) const
 {
@@ -105,6 +118,11 @@ void Backend_C::saveCode(std::ostream& out) const
   out << "\t{ 0, 0, 0 },\n}\n";
 
   out << "const nwocg_ExtPort * const nwocg_generated_ext_ports = ext_ports;\n const size_t nwocg_generated_ext_ports_size = sizeof(ext_ports);\n";
+}
+
+std::shared_ptr<Backend> Backend_C::copy() const {
+  // TODO: pass configuration options if provided
+  return std::make_shared<Backend_C>();
 }
 
 }

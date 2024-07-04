@@ -28,9 +28,12 @@ public:
   void addStepIdentity(const std::string& name, const std::string& argument, bool post = false) override;
   void addStepAddition(const std::string& name, const std::string& left, const std::string& right, bool isLeftNegative, bool isRightNegative, bool post) override;
   void addStepMultiplication(const std::string& name, const std::string& left, const std::string& right, bool post) override;
+  void addStepDependency(const std::string& dependencyName, const std::vector<std::string>& dependencyInputs,
+			 const std::string& dependencyOutput) override;
 
   void saveCode(std::ostream& out) const override;
 
+  std::shared_ptr<Backend> copy() const override;
 };
 
 }

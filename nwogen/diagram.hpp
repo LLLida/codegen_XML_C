@@ -9,16 +9,18 @@
 
 namespace nwogen {
 
-class CodeGenerator {
+class Diagram {
 
   LookupTable blocks;
-  std::shared_ptr<Block> outport;
+  std::shared_ptr<BlockOutport> outport;
 
 public:
 
-  CodeGenerator(rapidxml::xml_document<>& document);
+  Diagram(rapidxml::xml_document<>& document);
 
-  void generateCode(Backend& backend);
+  void emit(Backend& backend);
+
+  const std::shared_ptr<BlockOutport> getOutport() const;
 
 };
 
