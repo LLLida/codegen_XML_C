@@ -54,7 +54,11 @@ cmake --build . -j3
 nwocg.Dependency1 = callModule("custom.c", nwocg.Add3);
 ```
 
-Предложенный способ не является полноценным, но легко адаптируется.
+Предложенный способ не является полноценным, но легко
+адаптируется. Проверить можно используя файл `exampleWithCustom.xml`:
+```bash
+./codegen exampleWithCustom.xml out.c
+```
 
 ## Не реализовано
 
